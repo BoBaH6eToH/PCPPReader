@@ -1,16 +1,4 @@
-﻿/**
- * PcapPrinter application
- * =======================
- * This application takes a pcap or pcapng file, parses its packets using Packet++ and output each layer in each packet
- * as a readable string (quite similar to the way Wireshark shows packets).
- * In addition it prints a short summary of the file (with details such as file name, size, etc.)
- * The result is printed to stdout (by default) or to a file (if specified). It can also print only the
- * first X packets of a file
- *
- * For more details about modes of operation and parameters run PcapPrinter -h
- */
-
-#include <stdlib.h>
+﻿#include <stdlib.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -22,14 +10,13 @@
 #include <getopt.h>
 
 
-static struct option PcapPrinterOptions[] =
+static struct option InputOptions[] =
 {
 	{"output-file", required_argument, 0, 'o'},
 	{"packet-count", required_argument, 0, 'c'},
 	{"filter", required_argument, 0, 'i'},
 	{"summary", no_argument, 0, 's'},
 	{"help", no_argument, 0, 'h'},
-	{"version", no_argument, 0, 'v'},
 	{0, 0, 0, 0}
 };
 
@@ -58,24 +45,9 @@ void printUsage()
 		<< "    -c packet_count: Print only first packet_count number of packet" << std::endl
 		<< "    -i filter      : Apply a BPF filter, meaning only filtered packets will be printed" << std::endl
 		<< "    -s             : Print only file summary and exit" << std::endl
-		<< "    -v             : Display the current version and exit" << std::endl
 		<< "    -h             : Display this help message and exit" << std::endl
 		<< std::endl;
 }
-
-
-/**
- * Print application version
- */
-void printAppVersion()
-{
-	std::cout
-		<< pcpp::AppName::get() << " " << pcpp::getPcapPlusPlusVersionFull() << std::endl
-		<< "Built: " << pcpp::getBuildDateTime() << std::endl
-		<< "Built from: " << pcpp::getGitInfo() << std::endl;
-	exit(0);
-}
-
 
 std::string linkLayerToString(pcpp::LinkLayerType linkLayer)
 {
@@ -199,10 +171,6 @@ int printPcapNgPackets(pcpp::PcapNgFileReaderDevice* reader, std::ostream* out, 
 	return packetCountSoFar;
 }
 
-
-/**
- * main method of this utility
- */
 int main(int argc, char* argv[])
 {
 	pcpp::AppName::init(argc, argv);
@@ -219,7 +187,7 @@ int main(int argc, char* argv[])
 	int optionIndex = 0;
 	int opt = 0;
 
-	while ((opt = getopt_long(argc, argv, "o:c:i:svh", PcapPrinterOptions, &optionIndex)) != -1)
+	while ((opt = getopt_long(argc, argv, "o:c:i:svh", InputOptions, &optionIndex)) != -1)
 	{
 		switch (opt)
 		{
@@ -240,9 +208,6 @@ int main(int argc, char* argv[])
 		case 'h':
 			printUsage();
 			exit(0);
-			break;
-		case 'v':
-			printAppVersion();
 			break;
 		default:
 			printUsage();
@@ -288,7 +253,6 @@ int main(int argc, char* argv[])
 			delete reader;
 			EXIT_WITH_ERROR("Couldn't set filter '" << filter << "'");
 		}
-
 	}
 
 	// print file summary
@@ -326,10 +290,7 @@ int main(int argc, char* argv[])
 
 	(*out) << "Finished. Printed " << printedPacketCount << " packets" << std::endl;
 
-	// close the file
-	reader->close();
-
-	// free reader memory
+	reader->close()
 	delete reader;
 
 	return 0;
